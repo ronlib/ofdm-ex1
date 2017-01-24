@@ -255,8 +255,55 @@ function ex1
 %     title('SER curve for BF 4X2');
 
     
-    % SM ML 2X2
-    sm22_snr_ser = [];
+%     % SM ML 2X2
+%     sm22_snr_ser = [];
+%     for snr=[25:-1:0]
+%         bits = round(rand(DATA_LENGTH, 1));
+%         qpsk_symbols = bi2de(reshape(bits, [], 2));
+%         qpsk_values = qammod(qpsk_symbols, 4)/sqrt(2);
+%         channels = zeros(length(qpsk_values), 4);
+%         for i=[1:size(channels, 2)]
+%             channels(:,i) = addRayleighNoise(channels(:,i), 0);
+%         end
+%         
+%         demod_noisy_qpsk_symbols = zeros(length(qpsk_values), 1);
+%         for i=[1:2:length(qpsk_values)]
+%             H = [channels(i, 1), channels(i, 2) ; channels(i, 3) , channels(i, 4)];
+%             
+%             sent_signals = H*[qpsk_values(i) ; qpsk_values(i+1)]/sqrt(2);
+%             received_noisy_qpsk_values = addRayleighNoise(sent_signals, snr);
+%             
+%             ofdm_symbol_guesses = zeros(16, 3);
+%             index = 1;
+%             for t1=[0:3]
+%                 for t2=[0:3]
+%                     v1 = qammod(t1, 4)/sqrt(2);
+%                     v2 = qammod(t2, 4)/sqrt(2);
+%                     guess_value = (received_noisy_qpsk_values - H*[v1;v2])'*(received_noisy_qpsk_values - H*[v1;v2]);
+%                     ofdm_symbol_guesses(index,:) = [t1, t2, guess_value];
+%                     index = index+1;
+%                 end
+%             end
+%             
+%             [~,min_guess_value_index] = min(ofdm_symbol_guesses(:,3));
+%             
+%             demod_noisy_qpsk_symbols(i) = ofdm_symbol_guesses(min_guess_value_index, 1);
+%             demod_noisy_qpsk_symbols(i+1) = ofdm_symbol_guesses(min_guess_value_index, 2);
+%         end
+%         
+%         sm22_snr_ser = [sm22_snr_ser ; [snr, 1-(sum(demod_noisy_qpsk_symbols==qpsk_symbols)/length(qpsk_values))]];
+%     end
+%     
+%     figure;
+%     semilogy(sm22_snr_ser(:,1), sm22_snr_ser(:,2));
+%     grid on;
+%     xlabel('SNR[db]');
+%     ylabel('SER');
+%     title('SER curve for SM ML 2X2');
+
+
+    % SM ZF 2X2
+    sm_zf22_snr_ser = [];
     for snr=[25:-1:0]
         bits = round(rand(DATA_LENGTH, 1));
         qpsk_symbols = bi2de(reshape(bits, [], 2));
@@ -273,33 +320,23 @@ function ex1
             sent_signals = H*[qpsk_values(i) ; qpsk_values(i+1)]/sqrt(2);
             received_noisy_qpsk_values = addRayleighNoise(sent_signals, snr);
             
-            ofdm_symbol_guesses = zeros(16, 3);
-            index = 1;
-            for t1=[0:3]
-                for t2=[0:3]
-                    v1 = qammod(t1, 4)/sqrt(2);
-                    v2 = qammod(t2, 4)/sqrt(2);
-                    guess_value = (received_noisy_qpsk_values - H*[v1;v2])'*(received_noisy_qpsk_values - H*[v1;v2]);
-                    ofdm_symbol_guesses(index,:) = [t1, t2, guess_value];
-                    index = index+1;
-                end
-            end
+            zf_ls_estimation = H^-1*received_noisy_qpsk_values;
             
-            [~,min_guess_value_index] = min(ofdm_symbol_guesses(:,3));
-            
-            demod_noisy_qpsk_symbols(i) = ofdm_symbol_guesses(min_guess_value_index, 1);
-            demod_noisy_qpsk_symbols(i+1) = ofdm_symbol_guesses(min_guess_value_index, 2);
+            demod_noisy_qpsk_symbols(i) = lsFindOfdmSymbol(zf_ls_estimation(1), @(x)(x));
+            demod_noisy_qpsk_symbols(i+1) = lsFindOfdmSymbol(zf_ls_estimation(2), @(x)(x));
         end
         
-        sm22_snr_ser = [sm22_snr_ser ; [snr, 1-(sum(demod_noisy_qpsk_symbols==qpsk_symbols)/length(qpsk_values))]];
+        sm_zf22_snr_ser = [sm_zf22_snr_ser ; [snr, 1-(sum(demod_noisy_qpsk_symbols==qpsk_symbols)/length(qpsk_values))]];
     end
     
     figure;
-    semilogy(sm22_snr_ser(:,1), sm22_snr_ser(:,2));
+    semilogy(sm_zf22_snr_ser(:,1), sm_zf22_snr_ser(:,2));
     grid on;
     xlabel('SNR[db]');
     ylabel('SER');
-    title('SER curve for SM ML 2X2');
+    title('SER curve for SM ZF 2X2');
+
+
 
 end
 
