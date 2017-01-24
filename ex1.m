@@ -1,5 +1,5 @@
 function ex1
-    DATA_LENGTH = 5000;
+    DATA_LENGTH = 20000;
     
     x = zeros(1024, 1);
     nx = addRayleighNoise(x, 0);
@@ -67,46 +67,94 @@ function ex1
     
     
     
-    % MRC 1X4
-    mrc4_snr_ser = [];
-    for snr=[0:25]
+%     % MRC 1X4
+%     mrc4_snr_ser = [];
+%     for snr=[0:25]
+%         bits = round(rand(DATA_LENGTH, 1));
+%         qpsk_symbols = bi2de(reshape(bits, [], 2));
+%         qpsk_values = qammod(qpsk_symbols, 4)/sqrt(2);
+%         channel1 = addRayleighNoise(zeros(length(qpsk_values), 1), 0);
+%         channel2 = addRayleighNoise(zeros(length(qpsk_values), 1), 0);
+%         channel3 = addRayleighNoise(zeros(length(qpsk_values), 1), 0);
+%         channel4 = addRayleighNoise(zeros(length(qpsk_values), 1), 0);
+%         qpsk_values_after_channel1 = channel1.*qpsk_values;
+%         qpsk_values_after_channel2 = channel2.*qpsk_values;
+%         qpsk_values_after_channel3 = channel3.*qpsk_values;
+%         qpsk_values_after_channel4 = channel4.*qpsk_values;
+%         noisy_qpsk_values1 = addRayleighNoise(qpsk_values_after_channel1, snr);
+%         noisy_qpsk_values2 = addRayleighNoise(qpsk_values_after_channel2, snr);
+%         noisy_qpsk_values3 = addRayleighNoise(qpsk_values_after_channel3, snr);
+%         noisy_qpsk_values4 = addRayleighNoise(qpsk_values_after_channel4, snr);
+% %         noisy_qpsk_values1 = qpsk_values_after_channel1;
+% %         noisy_    qpsk_values2 = qpsk_values_after_channel2;
+% 
+% %         demod_noisy_qpsk_symbols = qamdemod(noisy_qpsk_values, 4);
+%         demod_noisy_qpsk_symbols = zeros(length(qpsk_values), 1);
+%         for i=[1:length(qpsk_values)]
+%             channel = [channel1(i); channel2(i); channel3(i); channel4(i)];
+%             received_value = [noisy_qpsk_values1(i) ; noisy_qpsk_values2(i) ; ...
+%                 noisy_qpsk_values3(i); noisy_qpsk_values4(i)];
+%             ls_est_value = [channel'*received_value]/(channel'*channel);
+%             demod_noisy_qpsk_symbols(i) = lsFindOfdmSymbol(ls_est_value, @(x)(x));
+%         end
+%         
+%         mrc4_snr_ser = [mrc4_snr_ser ; [snr, 1-(sum(demod_noisy_qpsk_symbols==qpsk_symbols)/length(qpsk_values))]];
+%     end
+%     
+%     figure;
+%     semilogy(mrc4_snr_ser(:,1), mrc4_snr_ser(:,2));
+%     grid on;
+%     xlabel('SNR[db]');
+%     ylabel('SER');
+%     title('SER curve for MRC 1X4');
+
+
+%     figure;
+%     semilogy(siso_snr_ser(:,1), siso_snr_ser(:,2));
+%     grid on;
+%     xlabel('SNR[db]');
+%     ylabel('SER');
+%     title('SER curve for SISO');
+%     
+    
+    % STC 2X1
+    stc2_snr_ser = [];
+    for snr=[25:-1:0]
         bits = round(rand(DATA_LENGTH, 1));
         qpsk_symbols = bi2de(reshape(bits, [], 2));
         qpsk_values = qammod(qpsk_symbols, 4)/sqrt(2);
         channel1 = addRayleighNoise(zeros(length(qpsk_values), 1), 0);
         channel2 = addRayleighNoise(zeros(length(qpsk_values), 1), 0);
-        channel3 = addRayleighNoise(zeros(length(qpsk_values), 1), 0);
-        channel4 = addRayleighNoise(zeros(length(qpsk_values), 1), 0);
-        qpsk_values_after_channel1 = channel1.*qpsk_values;
-        qpsk_values_after_channel2 = channel2.*qpsk_values;
-        qpsk_values_after_channel3 = channel3.*qpsk_values;
-        qpsk_values_after_channel4 = channel4.*qpsk_values;
-        noisy_qpsk_values1 = addRayleighNoise(qpsk_values_after_channel1, snr);
-        noisy_qpsk_values2 = addRayleighNoise(qpsk_values_after_channel2, snr);
-        noisy_qpsk_values3 = addRayleighNoise(qpsk_values_after_channel3, snr);
-        noisy_qpsk_values4 = addRayleighNoise(qpsk_values_after_channel4, snr);
+%         qpsk_values_after_channel1 = channel1.*qpsk_values;
+%         qpsk_values_after_channel2 = channel2.*qpsk_values;
+%         noisy_qpsk_values1 = addRayleighNoise(qpsk_values_after_channel1, snr);
+%         noisy_qpsk_values2 = addRayleighNoise(qpsk_values_after_channel2, snr);
 %         noisy_qpsk_values1 = qpsk_values_after_channel1;
 %         noisy_    qpsk_values2 = qpsk_values_after_channel2;
 
 %         demod_noisy_qpsk_symbols = qamdemod(noisy_qpsk_values, 4);
         demod_noisy_qpsk_symbols = zeros(length(qpsk_values), 1);
-        for i=[1:length(qpsk_values)]
-            channel = [channel1(i); channel2(i); channel3(i); channel4(i)];
-            received_value = [noisy_qpsk_values1(i) ; noisy_qpsk_values2(i) ; ...
-                noisy_qpsk_values3(i); noisy_qpsk_values4(i)];
-            ls_est_value = [channel'*received_value]/(channel'*channel);
-            demod_noisy_qpsk_symbols(i) = lsFindOfdmSymbol(ls_est_value, @(x)(x));
+        for i=[1:2:length(qpsk_values)-1]
+%             channel = [channel1(i) ; channel2(i)];
+            H = [channel1(i), channel2(i); channel2(i)', -channel1(i)']./sqrt(2);
+            signal = [qpsk_values(i) ; qpsk_values(i+1)];
+            qpsk_values_l = H*signal;
+            received_noisy_qpsk_values = addRayleighNoise(qpsk_values_l, snr);
+            ls_est_values = (H'*H)^-1*(H'*received_noisy_qpsk_values);
+            
+            demod_noisy_qpsk_symbols(i) = lsFindOfdmSymbol(ls_est_values(1), @(x)(x));
+            demod_noisy_qpsk_symbols(i+1) = lsFindOfdmSymbol(ls_est_values(2), @(x)(x));
         end
         
-        mrc4_snr_ser = [mrc4_snr_ser ; [snr, 1-(sum(demod_noisy_qpsk_symbols==qpsk_symbols)/length(qpsk_values))]];
+        stc2_snr_ser = [stc2_snr_ser ; [snr, 1-(sum(demod_noisy_qpsk_symbols==qpsk_symbols)/length(qpsk_values))]];
     end
     
     figure;
-    semilogy(mrc4_snr_ser(:,1), mrc4_snr_ser(:,2));
+    semilogy(stc2_snr_ser(:,1), stc2_snr_ser(:,2));
     grid on;
     xlabel('SNR[db]');
     ylabel('SER');
-    title('SER curve for MRC 1X4');
+    title('SER curve for STC 2X1');
 
 end
 
