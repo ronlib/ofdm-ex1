@@ -1,5 +1,5 @@
 function ex1
-    DATA_LENGTH = 20000;
+    DATA_LENGTH = 2000;
     
     x = zeros(1024, 1);
     nx = addRayleighNoise(x, 0);
@@ -117,44 +117,106 @@ function ex1
 %     title('SER curve for SISO');
 %     
     
-    % STC 2X1
-    stc2_snr_ser = [];
+%     % STC 2X1
+%     stc21_snr_ser = [];
+%     for snr=[25:-1:0]
+%         bits = round(rand(DATA_LENGTH, 1));
+%         qpsk_symbols = bi2de(reshape(bits, [], 2));
+%         qpsk_values = qammod(qpsk_symbols, 4)/sqrt(2);
+%         channel1 = addRayleighNoise(zeros(length(qpsk_values), 1), 0);
+%         channel2 = addRayleighNoise(zeros(length(qpsk_values), 1), 0);
+%         demod_noisy_qpsk_symbols = zeros(length(qpsk_values), 1);
+%         for i=[1:2:length(qpsk_values)-1]
+%             H = [channel1(i), channel2(i); channel2(i)', -channel1(i)']./sqrt(2);
+%             signal = [qpsk_values(i) ; qpsk_values(i+1)];
+%             qpsk_values_l = H*signal;
+%             received_noisy_qpsk_values = addRayleighNoise(qpsk_values_l, snr);
+%             ls_est_values = (H'*H)^-1*(H'*received_noisy_qpsk_values);
+%             
+%             demod_noisy_qpsk_symbols(i) = lsFindOfdmSymbol(ls_est_values(1), @(x)(x));
+%             demod_noisy_qpsk_symbols(i+1) = lsFindOfdmSymbol(ls_est_values(2), @(x)(x));
+%         end
+%         
+%         stc21_snr_ser = [stc21_snr_ser ; [snr, 1-(sum(demod_noisy_qpsk_symbols==qpsk_symbols)/length(qpsk_values))]];
+%     end
+%     
+%     figure;
+%     semilogy(stc21_snr_ser(:,1), stc21_snr_ser(:,2));
+%     grid on;
+%     xlabel('SNR[db]');
+%     ylabel('SER');
+%     title('SER curve for STC 2X1');
+
+    
+%     % STC 2X2
+%     stc22_snr_ser = [];
+%     for snr=[25:-1:0]
+%         bits = round(rand(DATA_LENGTH, 1));
+%         qpsk_symbols = bi2de(reshape(bits, [], 2));
+%         qpsk_values = qammod(qpsk_symbols, 4)/sqrt(2);
+%         channel1 = addRayleighNoise(zeros(length(qpsk_values), 1), 0);
+%         channel2 = addRayleighNoise(zeros(length(qpsk_values), 1), 0);
+%         channel3 = addRayleighNoise(zeros(length(qpsk_values), 1), 0);
+%         channel4 = addRayleighNoise(zeros(length(qpsk_values), 1), 0);
+%         demod_noisy_qpsk_symbols = zeros(length(qpsk_values), 1);
+%         for i=[1:2:length(qpsk_values)-1]
+%             H0 = [channel1(i), channel2(i); channel2(i)', -channel1(i)']./sqrt(2);
+%             H1 = [channel3(i), channel4(i); channel3(i)', -channel4(i)']./sqrt(2);
+%             H = [H0 ; H1];
+%             signal = [qpsk_values(i) ; qpsk_values(i+1)];
+%             qpsk_values_l = H*signal;
+%             received_noisy_qpsk_values = addRayleighNoise(qpsk_values_l, snr);
+%             ls_est_values = (H'*H)^-1*(H'*received_noisy_qpsk_values);
+%             
+%             demod_noisy_qpsk_symbols(i) = lsFindOfdmSymbol(ls_est_values(1), @(x)(x));
+%             demod_noisy_qpsk_symbols(i+1) = lsFindOfdmSymbol(ls_est_values(2), @(x)(x));
+%         end
+%         
+%         stc22_snr_ser = [stc22_snr_ser ; [snr, 1-(sum(demod_noisy_qpsk_symbols==qpsk_symbols)/length(qpsk_values))]];
+%     end
+%     
+%     figure;
+%     semilogy(stc22_snr_ser(:,1), stc22_snr_ser(:,2));
+%     grid on;
+%     xlabel('SNR[db]');
+%     ylabel('SER');
+%     title('SER curve for STC 2X2');
+
+    % BF 2X2
+    bf22_snr_ser = [];
     for snr=[25:-1:0]
         bits = round(rand(DATA_LENGTH, 1));
         qpsk_symbols = bi2de(reshape(bits, [], 2));
         qpsk_values = qammod(qpsk_symbols, 4)/sqrt(2);
-        channel1 = addRayleighNoise(zeros(length(qpsk_values), 1), 0);
-        channel2 = addRayleighNoise(zeros(length(qpsk_values), 1), 0);
-%         qpsk_values_after_channel1 = channel1.*qpsk_values;
-%         qpsk_values_after_channel2 = channel2.*qpsk_values;
-%         noisy_qpsk_values1 = addRayleighNoise(qpsk_values_after_channel1, snr);
-%         noisy_qpsk_values2 = addRayleighNoise(qpsk_values_after_channel2, snr);
-%         noisy_qpsk_values1 = qpsk_values_after_channel1;
-%         noisy_    qpsk_values2 = qpsk_values_after_channel2;
-
-%         demod_noisy_qpsk_symbols = qamdemod(noisy_qpsk_values, 4);
-        demod_noisy_qpsk_symbols = zeros(length(qpsk_values), 1);
-        for i=[1:2:length(qpsk_values)-1]
-%             channel = [channel1(i) ; channel2(i)];
-            H = [channel1(i), channel2(i); channel2(i)', -channel1(i)']./sqrt(2);
-            signal = [qpsk_values(i) ; qpsk_values(i+1)];
-            qpsk_values_l = H*signal;
-            received_noisy_qpsk_values = addRayleighNoise(qpsk_values_l, snr);
-            ls_est_values = (H'*H)^-1*(H'*received_noisy_qpsk_values);
-            
-            demod_noisy_qpsk_symbols(i) = lsFindOfdmSymbol(ls_est_values(1), @(x)(x));
-            demod_noisy_qpsk_symbols(i+1) = lsFindOfdmSymbol(ls_est_values(2), @(x)(x));
+        channels = zeros(length(qpsk_values), 4);
+        for i=[1:size(channels, 2)]
+            channels(:,i) = addRayleighNoise(channels(:,i), 0);
         end
         
-        stc2_snr_ser = [stc2_snr_ser ; [snr, 1-(sum(demod_noisy_qpsk_symbols==qpsk_symbols)/length(qpsk_values))]];
+        demod_noisy_qpsk_symbols = zeros(length(qpsk_values), 1);
+        for i=[1:length(qpsk_values)]
+            H = [channels(i, 1), channels(i, 2) ; channels(i, 3) , channels(i, 4)];
+            [V,D] = eig(H'*H);
+            [~,max_eig_index] = max(max(abs(D)));
+            
+            weighted_H = H*V(:, max_eig_index);
+            sent_signals = weighted_H*qpsk_values(i);
+            received_noisy_qpsk_values = addRayleighNoise(sent_signals, snr);
+                        
+            ls_est_value = (weighted_H'*weighted_H)^-1*(weighted_H'*received_noisy_qpsk_values);
+            demod_noisy_qpsk_symbols(i) = lsFindOfdmSymbol(ls_est_value, @(x)(x));
+        end
+        
+        bf22_snr_ser = [bf22_snr_ser ; [snr, 1-(sum(demod_noisy_qpsk_symbols==qpsk_symbols)/length(qpsk_values))]];
     end
     
     figure;
-    semilogy(stc2_snr_ser(:,1), stc2_snr_ser(:,2));
+    semilogy(bf22_snr_ser(:,1), bf22_snr_ser(:,2));
     grid on;
     xlabel('SNR[db]');
     ylabel('SER');
-    title('SER curve for STC 2X1');
+    title('SER curve for BF 2X2');
+
 
 end
 
