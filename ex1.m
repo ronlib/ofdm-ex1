@@ -218,41 +218,88 @@ function ex1
 %     title('SER curve for BF 2X2');
 
     
-    % BF 4X2
-    bf42_snr_ser = [];
+%     % BF 4X2
+%     bf42_snr_ser = [];
+%     for snr=[25:-1:0]
+%         bits = round(rand(DATA_LENGTH, 1));
+%         qpsk_symbols = bi2de(reshape(bits, [], 2));
+%         qpsk_values = qammod(qpsk_symbols, 4)/sqrt(2);
+%         channels = zeros(length(qpsk_values), 8);
+%         for i=[1:size(channels, 2)]
+%             channels(:,i) = addRayleighNoise(channels(:,i), 0);
+%         end
+%         
+%         demod_noisy_qpsk_symbols = zeros(length(qpsk_values), 1);
+%         for i=[1:length(qpsk_values)]
+%             H = [channels(i, 1), channels(i, 2) , channels(i, 3) , channels(i, 4) ; ...
+%                 channels(i, 5), channels(i, 6) , channels(i, 7) , channels(i, 8)];
+%             [V,D] = eig(H'*H);
+%             [~,max_eig_index] = max(max(abs(D)));
+%             
+%             weighted_H = H*V(:, max_eig_index);
+%             sent_signals = weighted_H*qpsk_values(i);
+%             received_noisy_qpsk_values = addRayleighNoise(sent_signals, snr);
+%                         
+%             ls_est_value = (weighted_H'*weighted_H)^-1*(weighted_H'*received_noisy_qpsk_values);
+%             demod_noisy_qpsk_symbols(i) = lsFindOfdmSymbol(ls_est_value, @(x)(x));
+%         end
+%         
+%         bf42_snr_ser = [bf42_snr_ser ; [snr, 1-(sum(demod_noisy_qpsk_symbols==qpsk_symbols)/length(qpsk_values))]];
+%     end
+%     
+%     figure;
+%     semilogy(bf42_snr_ser(:,1), bf42_snr_ser(:,2));
+%     grid on;
+%     xlabel('SNR[db]');
+%     ylabel('SER');
+%     title('SER curve for BF 4X2');
+
+    
+    % SM ML 2X2
+    sm22_snr_ser = [];
     for snr=[25:-1:0]
         bits = round(rand(DATA_LENGTH, 1));
         qpsk_symbols = bi2de(reshape(bits, [], 2));
         qpsk_values = qammod(qpsk_symbols, 4)/sqrt(2);
-        channels = zeros(length(qpsk_values), 8);
+        channels = zeros(length(qpsk_values), 4);
         for i=[1:size(channels, 2)]
             channels(:,i) = addRayleighNoise(channels(:,i), 0);
         end
         
         demod_noisy_qpsk_symbols = zeros(length(qpsk_values), 1);
-        for i=[1:length(qpsk_values)]
-            H = [channels(i, 1), channels(i, 2) , channels(i, 3) , channels(i, 4) ; ...
-                channels(i, 5), channels(i, 6) , channels(i, 7) , channels(i, 8)];
-            [V,D] = eig(H'*H);
-            [~,max_eig_index] = max(max(abs(D)));
+        for i=[1:2:length(qpsk_values)]
+            H = [channels(i, 1), channels(i, 2) ; channels(i, 3) , channels(i, 4)];
             
-            weighted_H = H*V(:, max_eig_index);
-            sent_signals = weighted_H*qpsk_values(i);
+            sent_signals = H*[qpsk_values(i) ; qpsk_values(i+1)]/sqrt(2);
             received_noisy_qpsk_values = addRayleighNoise(sent_signals, snr);
-                        
-            ls_est_value = (weighted_H'*weighted_H)^-1*(weighted_H'*received_noisy_qpsk_values);
-            demod_noisy_qpsk_symbols(i) = lsFindOfdmSymbol(ls_est_value, @(x)(x));
+            
+            ofdm_symbol_guesses = zeros(16, 3);
+            index = 1;
+            for t1=[0:3]
+                for t2=[0:3]
+                    v1 = qammod(t1, 4)/sqrt(2);
+                    v2 = qammod(t2, 4)/sqrt(2);
+                    guess_value = (received_noisy_qpsk_values - H*[v1;v2])'*(received_noisy_qpsk_values - H*[v1;v2]);
+                    ofdm_symbol_guesses(index,:) = [t1, t2, guess_value];
+                    index = index+1;
+                end
+            end
+            
+            [~,min_guess_value_index] = min(ofdm_symbol_guesses(:,3));
+            
+            demod_noisy_qpsk_symbols(i) = ofdm_symbol_guesses(min_guess_value_index, 1);
+            demod_noisy_qpsk_symbols(i+1) = ofdm_symbol_guesses(min_guess_value_index, 2);
         end
         
-        bf42_snr_ser = [bf42_snr_ser ; [snr, 1-(sum(demod_noisy_qpsk_symbols==qpsk_symbols)/length(qpsk_values))]];
+        sm22_snr_ser = [sm22_snr_ser ; [snr, 1-(sum(demod_noisy_qpsk_symbols==qpsk_symbols)/length(qpsk_values))]];
     end
     
     figure;
-    semilogy(bf42_snr_ser(:,1), bf42_snr_ser(:,2));
+    semilogy(sm22_snr_ser(:,1), sm22_snr_ser(:,2));
     grid on;
     xlabel('SNR[db]');
     ylabel('SER');
-    title('SER curve for BF 4X2');
+    title('SER curve for SM ML 2X2');
 
 end
 
@@ -264,6 +311,7 @@ function noisySignal = addRayleighNoise(signal, snrDb)
     noise = normrnd(0, 1, len, 2)/(sqrt(2*power(10, snrDb/10)));
     noisySignal = signal + noise(:, 1) + j*noise(:, 2);
 end
+
 
 function lsOfdmSymbol = lsFindOfdmSymbol(value, functional);
     possible_values = qammod([0:3], 4)./sqrt(2);
