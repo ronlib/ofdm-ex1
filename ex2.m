@@ -51,6 +51,23 @@ function ex2
         grid on;
     end
     
+    figure;
+    
+    % taken from https://www.mathworks.com/help/signal/ug/power-spectral-density-estimates-using-fft.html
+    
+    channel = zeros(N, 1);
+    channel(delays+1) = a(:,1);
+    xdft = fft(channel);
+    xdft = xdft(1:N/2+1);
+    psdx = (1/(PSD_FILTER_HZ*N)) * abs(xdft).^2;
+    psdx(2:end-1) = 2*psdx(2:end-1);
+    freq = 0:PSD_FILTER_HZ/length(channel):PSD_FILTER_HZ/2;
+
+    plot(freq,10*log10(psdx))
+    grid on
+    title('Periodogram Using FFT')
+    xlabel('Frequency (Hz)')
+    ylabel('Power/Frequency (dB/Hz)')
 
 end
 
